@@ -1,7 +1,12 @@
 import threading
+from threading import Semaphore, Thread
 import cv2
 import numpy as np
 import queue
+
+
+sem1 = Semaphore(1)
+sem2 = Semaphore(1)
 
 extractionBuffer = queue.Queue()
 grayBuffer = queue.Queue()
