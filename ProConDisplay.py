@@ -30,7 +30,7 @@ def extractFrames(fileName, outputBuffer):
         success,image = vidcap.read()
         print('Reading frame {} {}'.format(count, success))
         count += 1
-
+/
     print("Frame extraction complete")
 
 
