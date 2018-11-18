@@ -5,11 +5,12 @@ import queue
 
 extractionBuffer = queue.Queue()
 grayBuffer = queue.Queue()
+dispBuffer = queue.Queue()
 
 class threadExtract(threading.Thread):
     def __init__(self):        
-        Thread.__init__(self)
-        self.start()
+        threading.Thread.__init__(self)
+        #self.start()
     def run(self):
         
         global extractionBuffer
@@ -22,16 +23,16 @@ class threadExtract(threading.Thread):
         #open file
         vidFile = cv2.VideoCapture(name)
 
-        image = vidcap.read()
+        s, image = vidFile.read()
 
-        while image:
+        while s:
             #get frame (encoded as jpeg)
             jpegFrame = cv2.imencode('.jpg',image)
 
             #add to buffer
             extractionBuffer.put(jpegFrame)
 
-            image = vidcap.read()
+            s,image = vidFile.read()
 
             fCount += 1
             
@@ -39,24 +40,73 @@ class threadExtract(threading.Thread):
 
 class threadGray(threading.Thread):
     def __init__(self):        
-        Thread.__init__(self)
-        self.start()
+        threading.Thread.__init__(self)
+        #self.start()
     def run(self):
 
         global extractionBuffer
         global grayBuffer
+        global dispBuffer
                 
         #frame number
         fCount = 0;
 
         #get frame
-        vidFrame = extractionBuffer.get()
+       
         
         #TODO: implement semaphores. For now, just make sure it works!
         while not extractionBuffer.empty():
 
-            deVidFrame = cv2.imdecode(vidFrame, cv2.IMREAD_UNCHANGED) 
+            vidFrame = extractionBuffer.get()
+            
+            deVidFrame = cv2.imdecode(vidFrame, cv2.IMREAD_UNCHANGED)
+
+            grayFrame = cv2cvtColor(deVidFrame,cv2.COLOR_BGR2GRAY)
+
+            jpegFrame = cv2.imencode('.jpg',grayFrame)
+
+            dispBuffer.put(jpegFrame)
         
             fCount += 1
             
         print("Conversion complete!")
+class threadDisp(threading.Thread):
+    def __init__(self):        
+        threading.Thread.__init__(self)
+        #self.start()
+    def run(self):
+
+        global grayBuffer
+        global dispBuffer
+                
+        #frame number
+        fCount = 0;
+
+        #get frame
+       
+        
+        #TODO: implement semaphores. For now, just make sure it works!
+        while not grayBuffer.empty():
+
+            gFrame = grayBuffer.get()
+
+            frame =  cv2.imdecode(gFrame, cv2.IMREAD_UNCHANGED)
+
+            cv2.imshow("Video",frame)
+
+            if cv2.waitKey(42) and 0xFF == ord("q"):
+                break
+
+            fCount += 1
+
+    print("Display complete!")
+    cv2.destroyAllWindows()    
+
+#Running threads
+eThread = threadExtract()
+gThread = threadGray()
+dThread = threadDisp()
+
+eThread.start()
+gThread.start()
+dThread.start()
