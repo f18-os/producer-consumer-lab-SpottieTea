@@ -37,7 +37,7 @@ class threadExtract(threading.Thread):
 
             #add to buffer
             extractionBuffer.put(jpegFrame)
-
+            #read frame for next loop
             s,image = vidFile.read()
 
             fCount += 1
@@ -65,16 +65,18 @@ class threadGray(threading.Thread):
         #accessed by the extraction function
         while not extractionBuffer.empty():
 
+            #get frame from buffer
             vidFrame = extractionBuffer.get()
-            
+
+            #decode frame
             deVidFrame = cv2.imdecode(vidFrame, cv2.IMREAD_UNCHANGED)
-
+            #gray out frame
             grayFrame = cv2cvtColor(deVidFrame,cv2.COLOR_BGR2GRAY)
-
+            #encode frame
             jpegFrame = cv2.imencode('.jpg',grayFrame)
-
+            #put frame in buffer
             grayBuffer.put(jpegFrame)
-        
+            #increment frame count. Unused for now
             fCount += 1
             
         print("Conversion complete!")
@@ -95,13 +97,13 @@ class threadDisp(threading.Thread):
         #TODO: implement semaphores. For now, just make sure it works!
         #Get grayscale buffers and display them!
         while not grayBuffer.empty():
-
+            #get grayscale frame
             gFrame = grayBuffer.get()
-
+            #decode grayscale frame
             frame =  cv2.imdecode(gFrame, cv2.IMREAD_UNCHANGED)
-
+            #display frame
             cv2.imshow("Video",frame)
-
+            #wait 42 seconds
             if cv2.waitKey(42) and 0xFF == ord("q"):
                 break
 
