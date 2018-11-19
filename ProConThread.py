@@ -19,7 +19,8 @@ class Q:
         return "Q(%s)" % self.a
 
 #initialize semaphore
-fill = Semaphore(10)
+mut = Semaphore(1)
+fill = Semaphore(0)
 empty  = Semaphore(10)
 
 extractionBuffer = Q()
@@ -50,7 +51,9 @@ class threadExtract(threading.Thread):
 
             #add to buffer
             empty.acquire()
+            mut.acquire()
             extractionBuffer.put(jpegFrame)
+            mut.release()
             fill.release()
             #read frame for next loop
             s,image = vidFile.read()
@@ -82,19 +85,18 @@ class threadGray(threading.Thread):
         while True:
 
             #get frame from buffer
-            empty.release()
-            vidFrame = extractionBuffer.get()
             fill.acquire()
-            #decode frame
-            deVidFrame = cv2.imdecode(vidFrame, cv2.IMREAD_UNCHANGED)
+            mut.acquire()
+            vidFrame = extractionBuffer.get()
+            mut.release()
+            empty.release()
             #gray out frame
-            grayFrame = cv2cvtColor(deVidFrame,cv2.COLOR_BGR2GRAY)
-            #encode frame
-            jpegFrame = cv2.imencode('.jpg',grayFrame)
+            grayFrame = cv2.cvtColor(vidFrame,cv2.COLOR_BGR2GRAY)
+            
             #put frame in buffer
-            grayBuffer.put(jpegFrame)
-            #increment frame count. Unused for now
-            print("Get %d",fCount)
+            grayBuffer.put(grayFrame)
+            #increment frame count.
+            print("Converted frame  %d",fCount)
             fCount += 1
             
         print("Conversion complete!")
