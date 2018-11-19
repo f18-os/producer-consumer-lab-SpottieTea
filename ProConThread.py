@@ -18,7 +18,7 @@ class Q:
     def __repr__(self):
         return "Q(%s)" % self.a
 
-
+#initialize semaphore
 sem1 = Semaphore(1)
 sem2 = Semaphore(1)
 
@@ -49,8 +49,9 @@ class threadExtract(threading.Thread):
             jpegFrame = cv2.imencode('.jpg',image)
 
             #add to buffer
+            sem1.acquire()
             extractionBuffer.put(jpegFrame)
-
+            sem2.release()
             #read frame for next loop
             s,image = vidFile.read()
             
@@ -61,18 +62,19 @@ class threadExtract(threading.Thread):
 
 class threadGray(threading.Thread):
     def __init__(self):        
+
         threading.Thread.__init__(self)
-        #self.start()
+
     def run(self):
 
         global extractionBuffer
         global grayBuffer
-                
+        global dispBuffer
+
         #frame number
         fCount = 0;
 
         #get frame
-        vidFrame = extractionBuffer.get()
         
         #TODO: implement semaphores. For now, just make sure it works!
         #Push converted, grayscale frames to the grayscale Buffer grayBuffer, which will be
@@ -80,6 +82,9 @@ class threadGray(threading.Thread):
         while True:
 
             #get frame from buffer
+            sem2.acquire()
+            vidFrame = extractionBuffer.get()
+            sem1.release()
             #decode frame
             deVidFrame = cv2.imdecode(vidFrame, cv2.IMREAD_UNCHANGED)
             #gray out frame
@@ -89,6 +94,7 @@ class threadGray(threading.Thread):
             #put frame in buffer
             grayBuffer.put(jpegFrame)
             #increment frame count. Unused for now
+            print("Get %d",fCount)
             fCount += 1
             
         print("Conversion complete!")
