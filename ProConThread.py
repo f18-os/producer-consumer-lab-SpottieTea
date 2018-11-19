@@ -91,10 +91,12 @@ class threadGray(threading.Thread):
             mut.release()
             empty.release()
             #gray out frame
-            grayFrame = cv2.cvtColor(vidFrame,cv2.COLOR_BGR2GRAY)
+            dvidFrame = cv2.imdecode(vidFrame,cv2.IMREAD_UNCHANGED)
+            grayFrame = cv2.cvtColor(dvidFrame,cv2.COLOR_BGR2GRAY)
             
             #put frame in buffer
-            grayBuffer.put(grayFrame)
+            codeGray = cv2.imencode('.jpeg',grayFrame)
+            grayBuffer.put(codeGray)
             #increment frame count.
             print("Converted frame  %d",fCount)
             fCount += 1
