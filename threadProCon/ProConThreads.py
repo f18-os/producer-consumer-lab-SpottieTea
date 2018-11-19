@@ -10,7 +10,7 @@ sem2 = Semaphore(1)
 
 extractionBuffer = queue.Queue()
 grayBuffer = queue.Queue()
-dispBuffer = queue.Queue()
+#dispBuffer = queue.Queue()
 
 class threadExtract(threading.Thread):
     def __init__(self):        
@@ -29,7 +29,8 @@ class threadExtract(threading.Thread):
         vidFile = cv2.VideoCapture(name)
 
         s, image = vidFile.read()
-
+        
+        #push frames to the appropriate queue (to the extraction buffer)
         while s:
             #get frame (encoded as jpeg)
             jpegFrame = cv2.imencode('.jpg',image)
@@ -60,6 +61,8 @@ class threadGray(threading.Thread):
        
         
         #TODO: implement semaphores. For now, just make sure it works!
+        #Push converted, grayscale frames to the grayscale Buffer grayBuffer, which will be
+        #accessed by the extraction function
         while not extractionBuffer.empty():
 
             vidFrame = extractionBuffer.get()
@@ -70,7 +73,7 @@ class threadGray(threading.Thread):
 
             jpegFrame = cv2.imencode('.jpg',grayFrame)
 
-            dispBuffer.put(jpegFrame)
+            grayBuffer.put(jpegFrame)
         
             fCount += 1
             
@@ -82,7 +85,6 @@ class threadDisp(threading.Thread):
     def run(self):
 
         global grayBuffer
-        global dispBuffer
                 
         #frame number
         fCount = 0;
@@ -91,6 +93,7 @@ class threadDisp(threading.Thread):
        
         
         #TODO: implement semaphores. For now, just make sure it works!
+        #Get grayscale buffers and display them!
         while not grayBuffer.empty():
 
             gFrame = grayBuffer.get()
@@ -109,9 +112,5 @@ class threadDisp(threading.Thread):
 
 #Running threads
 eThread = threadExtract()
-gThread = threadGray()
-dThread = threadDisp()
-
-eThread.start()
-gThread.start()
-dThread.start()
+#gThread = threadGray()
+#dThread = threadDisp()
