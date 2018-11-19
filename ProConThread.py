@@ -19,8 +19,8 @@ class Q:
         return "Q(%s)" % self.a
 
 #initialize semaphore
-sem1 = Semaphore(1)
-sem2 = Semaphore(1)
+fill = Semaphore(10)
+empty  = Semaphore(10)
 
 extractionBuffer = Q()
 grayBuffer = Q()
@@ -49,9 +49,9 @@ class threadExtract(threading.Thread):
             jpegFrame = cv2.imencode('.jpg',image)
 
             #add to buffer
-            sem1.acquire()
+            empty.acquire()
             extractionBuffer.put(jpegFrame)
-            sem2.release()
+            fill.release()
             #read frame for next loop
             s,image = vidFile.read()
             
@@ -82,9 +82,9 @@ class threadGray(threading.Thread):
         while True:
 
             #get frame from buffer
-            sem2.acquire()
+            empty.release()
             vidFrame = extractionBuffer.get()
-            sem1.release()
+            fill.acquire()
             #decode frame
             deVidFrame = cv2.imdecode(vidFrame, cv2.IMREAD_UNCHANGED)
             #gray out frame
