@@ -3,6 +3,7 @@ from threading import Semaphore, Thread
 import cv2
 import numpy as np
 import queue
+import base64
 
 class Q:
     def __init__(self, initArray = []):
@@ -23,6 +24,11 @@ mut = Semaphore(1)
 fill = Semaphore(0)
 empty  = Semaphore(10)
 
+
+mut2 = Semaphore(1)
+fill2 = Semaphore(0)
+empty2 = Semaphore(10)
+
 extractionBuffer = Q()
 grayBuffer = Q()
 
@@ -31,37 +37,40 @@ class threadExtract(threading.Thread):
         threading.Thread.__init__(self)
         #self.start()
     def run(self):
+
         global extractionBuffer
 
-        name = "clip.mp4"
+        # Initialize frame count 
+        count = 0
+
+        # open video file
+        vidcap = cv2.VideoCapture("clip.mp4")
+
+        # read first image
+        success,image = vidcap.read()
+    
+        print("Reading frame {} {} ".format(count, success))
         
-        #frame number
-        fCount = 0;
+        while success:
+            # get a jpg encoded frame
+            success, jpgImage = cv2.imencode('.jpg', image)
 
-        #open file
-        vidFile = cv2.VideoCapture(name)
+            #encode the frame as base 64 to make debugging easier
+            jpgAsText = base64.b64encode(jpgImage)
 
-        s, image = vidFile.read()
-        print('Reading frame {} {}'.format(fCount, s))
-
-        #push frames to the appropriate queue (to the extraction buffer)
-        while s:
-            #get frame (encoded as jpeg)
-            jpegFrame = cv2.imencode('.jpg',image)
-
-            #add to buffer
+            # add the frame to the buffer
             empty.acquire()
             mut.acquire()
-            extractionBuffer.put(jpegFrame)
+            extractionBuffer.put(jpgAsText)
             mut.release()
             fill.release()
-            #read frame for next loop
-            s,image = vidFile.read()
-            
-            print('Reading frame {} {}'.format(fCount, s))
-            fCount += 1
-            
-        print("Extraction complete!")
+            success,image = vidcap.read()
+            print('Reading frame {} {}'.format(count, success))
+            count += 1
+
+        print("Frame extraction complete")
+    
+
 
 class threadGray(threading.Thread):
     def __init__(self):        
@@ -72,7 +81,6 @@ class threadGray(threading.Thread):
 
         global extractionBuffer
         global grayBuffer
-        global dispBuffer
 
         #frame number
         fCount = 0;
@@ -85,20 +93,35 @@ class threadGray(threading.Thread):
         while True:
 
             #get frame from buffer
+            print("Getting frame...")
             fill.acquire()
             mut.acquire()
-            vidFrame = extractionBuffer.get()
+            vidFrameText = extractionBuffer.get()
             mut.release()
             empty.release()
-            #gray out frame
-            dvidFrame = cv2.imdecode(vidFrame,cv2.IMREAD_UNCHANGED)
-            grayFrame = cv2.cvtColor(dvidFrame,cv2.COLOR_BGR2GRAY)
+            #decode and gray out frame
+            vidFrame = base64.b64decode(vidFrameText)
+
+            frame = np.asarray(bytearray(vidFrame),dtype=np.uint8)
+           
+            vidFrameFinal = cv2.imdecode(frame,cv2.IMREAD_UNCHANGED)
+
+            grayFrame = cv2.cvtColor(vidFrameFinal,cv2.COLOR_BGR2GRAY)
             
             #put frame in buffer
-            codeGray = cv2.imencode('.jpeg',grayFrame)
+            codeGray = cv2.imencode('.jpg',grayFrame)
+
+            #print(codeGray)
+            
+            #codeGrayText = base64.b64encode(codeGray)
+
+            empty2.acquire()
+            mut2.acquire()
             grayBuffer.put(codeGray)
+            mut2.release()
+            fill2.release()
             #increment frame count.
-            print("Converted frame  %d",fCount)
+            print("Converted frame ",fCount)
             fCount += 1
             
         print("Conversion complete!")
@@ -121,7 +144,12 @@ class threadDisp(threading.Thread):
         #Get grayscale buffers and display them!
         while True:
             #get grayscale frame
+            fill2.acquire()
+            mut2.acquire()
             gFrame = grayBuffer.get()
+            mut2.release()
+            empty2.release()
+            
             #decode grayscale frame
             frame =  cv2.imdecode(gFrame, cv2.IMREAD_UNCHANGED)
             #display frame
@@ -138,6 +166,8 @@ class threadDisp(threading.Thread):
 #Running threads
 eThread = threadExtract()
 gThread = threadGray()
+dThread=threadDisp()
 
 eThread.start()
 gThread.start()
+dThread.start()
