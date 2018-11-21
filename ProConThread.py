@@ -48,21 +48,23 @@ class threadExtract(threading.Thread):
 
         # read first image
         success,image = vidcap.read()
-    
+
+        
         print("Reading frame {} {} ".format(count, success))
+        count +=1
         
         while success:
             # get a jpg encoded frame
             success, jpgImage = cv2.imencode('.jpg', image)
 
             #encode the frame as base 64 to make debugging easier
-            jpgAsText = base64.b64encode(jpgImage)
+            #jpgAsText = base64.b64encode(jpgImage)
 
             # add the frame to the buffer
             empty.acquire()
-            mut.acquire()
-            extractionBuffer.put(jpgAsText)
-            mut.release()
+           # mut.acquire()
+            extractionBuffer.put(jpgImage)
+            #mut.release()
             fill.release()
             success,image = vidcap.read()
             print('Reading frame {} {}'.format(count, success))
@@ -87,26 +89,28 @@ class threadGray(threading.Thread):
 
         #get frame
         
-        #TODO: implement semaphores. For now, just make sure it works!
         #Push converted, grayscale frames to the grayscale Buffer grayBuffer, which will be
         #accessed by the extraction function
         while True:
 
             #get frame from buffer
-            print("Getting frame...")
             fill.acquire()
-            mut.acquire()
+            #mut.acquire()
             vidFrameText = extractionBuffer.get()
-            mut.release()
+            #mut.release()
             empty.release()
             #decode and gray out frame
-            vidFrame = base64.b64decode(vidFrameText)
+            #vidFrame = base64.b64decode(vidFrameText)
 
-            frame = np.asarray(bytearray(vidFrame),dtype=np.uint8)
+            frame = np.asarray(bytearray(vidFrameText),dtype=np.uint8)
            
             vidFrameFinal = cv2.imdecode(frame,cv2.IMREAD_UNCHANGED)
 
+            #print(vidFrameFinal)
+            
             grayFrame = cv2.cvtColor(vidFrameFinal,cv2.COLOR_BGR2GRAY)
+
+            #print(grayFrame)
             
             #put frame in buffer
             codeGray = cv2.imencode('.jpg',grayFrame)
@@ -116,9 +120,9 @@ class threadGray(threading.Thread):
             #codeGrayText = base64.b64encode(codeGray)
 
             empty2.acquire()
-            mut2.acquire()
-            grayBuffer.put(codeGray)
-            mut2.release()
+            #mut2.acquire()
+            grayBuffer.put(grayFrame)
+            #mut2.release()
             fill2.release()
             #increment frame count.
             print("Converted frame ",fCount)
@@ -127,41 +131,54 @@ class threadGray(threading.Thread):
         print("Conversion complete!")
 
 class threadDisp(threading.Thread):
-    def __init__(self):        
+    def __init__(self):
+        
         threading.Thread.__init__(self)
-        #self.start()
+        
     def run(self):
 
         global grayBuffer
-                
+
+        print("Display begins...")
         #frame number
         fCount = 0;
 
-        #get frame
-       
-        
-        #TODO: implement semaphores. For now, just make sure it works!
-        #Get grayscale buffers and display them!
+        # go through each frame in the buffer until the buffer is empty
         while True:
-            #get grayscale frame
+            # get the next frame
             fill2.acquire()
-            mut2.acquire()
-            gFrame = grayBuffer.get()
-            mut2.release()
+            #mut2.acquire()
+            frame = grayBuffer.get()
+            #mut2.release()
             empty2.release()
+
+            #print(frame)
             
-            #decode grayscale frame
-            frame =  cv2.imdecode(gFrame, cv2.IMREAD_UNCHANGED)
-            #display frame
-            cv2.imshow("Video",frame)
-            #wait 42 seconds
+            # decode the frame 
+            #jpgRawImage = base64.b64decode(frameAsText)
+
+            # convert the raw frame to a numpy array
+            jpgImage = np.asarray(bytearray(frame), dtype=np.uint8)
+
+            #print (jpgImage)
+            
+            # get a jpg encoded frame
+            img = cv2.imdecode(jpgImage,cv2.IMREAD_UNCHANGED)
+
+            print("Displaying frame {}".format(fCount))        
+
+            # display the image in a window called "video" and wait 42ms
+            # before displaying the next frame
+            cv2.imshow("Video", img)
             if cv2.waitKey(42) and 0xFF == ord("q"):
                 break
 
             fCount += 1
 
-        print("Display complete!")
-        cv2.destroyAllWindows()    
+    print("Finished displaying all frames")
+    # cleanup the windows
+    cv2.destroyAllWindows()
+    
 
 #Running threads
 eThread = threadExtract()
