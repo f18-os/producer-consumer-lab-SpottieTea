@@ -20,12 +20,8 @@ class Q:
         return "Q(%s)" % self.a
 
 #initialize semaphore
-mut = Semaphore(1)
 fill = Semaphore(0)
 empty  = Semaphore(10)
-
-
-mut2 = Semaphore(1)
 fill2 = Semaphore(0)
 empty2 = Semaphore(10)
 
@@ -62,9 +58,7 @@ class threadExtract(threading.Thread):
 
             # add the frame to the buffer
             empty.acquire()
-           # mut.acquire()
             extractionBuffer.put(jpgImage)
-            #mut.release()
             fill.release()
             success,image = vidcap.read()
             print('Reading frame {} {}'.format(count, success))
@@ -95,9 +89,7 @@ class threadGray(threading.Thread):
 
             #get frame from buffer
             fill.acquire()
-            #mut.acquire()
             vidFrameText = extractionBuffer.get()
-            #mut.release()
             empty.release()
             #decode and gray out frame
             #vidFrame = base64.b64decode(vidFrameText)
@@ -120,9 +112,7 @@ class threadGray(threading.Thread):
             #codeGrayText = base64.b64encode(codeGray)
 
             empty2.acquire()
-            #mut2.acquire()
             grayBuffer.put(grayFrame)
-            #mut2.release()
             fill2.release()
             #increment frame count.
             print("Converted frame ",fCount)
@@ -147,9 +137,7 @@ class threadDisp(threading.Thread):
         while True:
             # get the next frame
             fill2.acquire()
-            #mut2.acquire()
             frame = grayBuffer.get()
-            #mut2.release()
             empty2.release()
 
             #print(frame)
