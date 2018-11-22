@@ -93,10 +93,8 @@ class threadGray(threading.Thread):
             empty.release()
             #decode and gray out frame
             #vidFrame = base64.b64decode(vidFrameText)
-
-            frame = np.asarray(bytearray(vidFrameText),dtype=np.uint8)
            
-            vidFrameFinal = cv2.imdecode(frame,cv2.IMREAD_UNCHANGED)
+            vidFrameFinal = cv2.imdecode(vidFrameText,cv2.IMREAD_UNCHANGED)
 
             #print(vidFrameFinal)
             
@@ -105,12 +103,7 @@ class threadGray(threading.Thread):
             #print(grayFrame)
             
             #put frame in buffer
-            codeGray = cv2.imencode('.jpg',grayFrame)
-
-            #print(codeGray)
             
-            #codeGrayText = base64.b64encode(codeGray)
-
             empty2.acquire()
             grayBuffer.put(grayFrame)
             fill2.release()
@@ -146,18 +139,14 @@ class threadDisp(threading.Thread):
             #jpgRawImage = base64.b64decode(frameAsText)
 
             # convert the raw frame to a numpy array
-            jpgImage = np.asarray(bytearray(frame), dtype=np.uint8)
-
             #print (jpgImage)
             
             # get a jpg encoded frame
-            img = cv2.imdecode(jpgImage,cv2.IMREAD_UNCHANGED)
-
             print("Displaying frame {}".format(fCount))        
 
             # display the image in a window called "video" and wait 42ms
             # before displaying the next frame
-            cv2.imshow("Video", img)
+            cv2.imshow("Video", frame)
             if cv2.waitKey(42) and 0xFF == ord("q"):
                 break
 
