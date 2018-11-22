@@ -134,14 +134,6 @@ class threadDisp(threading.Thread):
             frame = grayBuffer.get()
             empty2.release()
 
-            #print(frame)
-            
-            # decode the frame 
-            #jpgRawImage = base64.b64decode(frameAsText)
-
-            # convert the raw frame to a numpy array
-            #print (jpgImage)
-            
             # get a jpg encoded frame
             print("Displaying frame {}".format(fCount))        
 
