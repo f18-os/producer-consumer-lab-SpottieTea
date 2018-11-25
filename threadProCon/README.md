@@ -4,7 +4,7 @@
   threadDisp.
 - threadExtract takes a video file and reads it frame by frame, encoding it
   and placing it in a buffer.
-- threadGray takes frames from the buffer, converts them to grayscale, and
+- threadGray takes frames from the buffer, decodes and converts them to grayscale, and
   places them in a second buffer.
 - threadDisp reads converted frames from the second buffer and displays them
   on screen.
