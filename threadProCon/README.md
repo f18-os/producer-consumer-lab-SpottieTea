@@ -11,5 +11,7 @@
   
 All three threads use semaphores (two sets of empty/fill semaphores) upon accessing buffers in order to run simultaneously while avoiding conflict in produce-consume cycles!
 
-
-  
+# How to Run
+To run ProConThread.py:
+- enter "python3 ProConThread.py, OR
+- enter "./ProConThread.py"
