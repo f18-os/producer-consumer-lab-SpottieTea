@@ -8,7 +8,8 @@
   places them in a second buffer.
 - threadDisp reads converted frames from the second buffer and displays them
   on screen.
+  
+All three threads use semaphores (two sets of empty/fill semaphores) upon accessing buffers in order to run simultaneously while avoiding conflict in produce-consume cycles!
 
-All three threads use semaphores (two sets of empty/fill semaphores) to run
-simultaneously while avoiding conflict in produce-consume cycles!
+
   
